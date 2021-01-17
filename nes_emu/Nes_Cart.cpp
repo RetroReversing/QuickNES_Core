@@ -91,6 +91,7 @@ struct ines_header_t {
 	uint8_t zero [8];  // if zero [7] is non-zero, treat flags2 as zero
 };
 BOOST_STATIC_ASSERT( sizeof (ines_header_t) == 16 );
+extern ines_header_t libRR_iNes;
 
 const char * Nes_Cart::load_ines( Auto_File_Reader in )
 {
@@ -115,6 +116,7 @@ const char * Nes_Cart::load_ines( Auto_File_Reader in )
 	
 	RETURN_ERR( in->read( prg(), prg_size() ) );
 	RETURN_ERR( in->read( chr(), chr_size() ) );
+	libRR_iNes = h;
 	
 	return 0;
 }
