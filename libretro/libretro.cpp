@@ -26,14 +26,16 @@
 #define NES_4_3 (4.0 / 3.0)
 #define NES_PAR (width * (8.0 / 7.0) / height)
 
+#include "libRetroReversing/include/libRR.h"
+
 static Nes_Emu *emu;
 
-static retro_video_refresh_t video_cb;
+retro_video_refresh_t video_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
+static retro_input_state_t original_input_state_cb;
 static bool aspect_ratio_par;
 #ifdef PSP
 static bool use_overscan;
@@ -470,7 +472,7 @@ void retro_set_input_poll(retro_input_poll_t cb)
 
 void retro_set_input_state(retro_input_state_t cb)
 {
-   input_state_cb = cb;
+   original_input_state_cb = cb;
 }
 
 void retro_set_video_refresh(retro_video_refresh_t cb)
@@ -804,6 +806,9 @@ static void update_input(int pads[MAX_PLAYERS])
 
    pads[0] = pads[1] = 0;
    input_poll_cb();
+   //libRR start
+  retro_input_state_t input_state_cb = libRR_handle_input(original_input_state_cb);
+   // libRR end
 
    for (p = 0; p < MAX_PLAYERS; p++)
    {
@@ -875,6 +880,14 @@ void retro_run(void)
    bool updated = false;
    int  pads[MAX_PLAYERS] = {0};
 
+   // libRR start
+   bool should_continue = libRR_run_frame();
+   if (!should_continue)
+   {
+      return;
+   }
+   // libRR end   
+
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       check_variables();
    
@@ -944,7 +957,7 @@ void retro_run(void)
 
 	   sceGuFinish();
 
-	   video_cb(texture_vram_p,
+	   libRR_video_cb(texture_vram_p,
 		   Nes_Emu::image_width - (use_overscan ? 0 : 16),
 		   Nes_Emu::image_height - (use_overscan ? 0 : 16),
 		   256);
@@ -991,7 +1004,7 @@ void retro_run(void)
 
    ps2->coreTexture->Mem = (u32*)frame.pixels;
 
-   video_cb(buf,
+   libRR_video_cb(buf,
 		   videoBufferWidth,
 		   videoBufferHeight,
 		   videoBufferWidth * sizeof(uint16_t));
@@ -1018,7 +1031,7 @@ void retro_run(void)
 			   out_scanline[x] = retro_palette[in_scanline[x]];
 	   }
 
-	   video_cb(video_buffer + (use_overscan_v ? (use_overscan_h ? 0 : 8) : ((use_overscan_h ? 0 : 8) + 256 * 8)),
+	   libRR_video_cb(video_buffer + (use_overscan_v ? (use_overscan_h ? 0 : 8) : ((use_overscan_h ? 0 : 8) + 256 * 8)),
 		   Nes_Emu::image_width - (use_overscan_h ? 0 : 16),
 		   Nes_Emu::image_height - (use_overscan_v ? 0 : 16),
 		   Nes_Emu::image_width * sizeof(uint16_t));
@@ -1080,8 +1093,10 @@ bool retro_load_game(const struct retro_game_info *info)
    };
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
+   libRR_setInputDescriptor(desc, 10);
 
    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+   libRR_core_pixel_format = RETRO_PIXEL_FORMAT_RGB565;
    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
    {
       fprintf(stderr, "RGB565 is not supported.\n");
@@ -1116,16 +1131,23 @@ bool retro_load_game(const struct retro_game_info *info)
    descs[0].start  = 0x00000000;
    descs[0].len    = Nes_Emu::low_mem_size;
    descs[0].select = 0;
+   descs[0].addrspace = "System RAM";
 
    descs[1].ptr    = emu->high_mem();        // WRAM
    descs[1].start  = 0x00006000;
    descs[1].len    = Nes_Emu::high_mem_size;
    descs[1].select = 0;
+   descs[1].addrspace = "WRAM";
 
    retromap.descriptors       = descs;
    retromap.num_descriptors   = sizeof(descs) / sizeof(*descs);
 
    environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &retromap);
+   libRR_set_retro_memmap((struct retro_memory_descriptor *)retromap.descriptors, retromap.num_descriptors);
+
+   // libRR start
+   libRR_handle_load_game(info, environ_cb);
+   // libRR end
 
    Mem_File_Reader reader(info->data, info->size);
    return !emu->load_ines(reader);
@@ -1133,6 +1155,7 @@ bool retro_load_game(const struct retro_game_info *info)
 
 void retro_unload_game(void)
 {
+   libRR_handle_emulator_close();
    if (emu)
       emu->close();
    delete emu;

@@ -65,10 +65,10 @@ else ifeq ($(platform), osx)
 	TARGET := $(TARGET_NAME)_libretro.dylib
 	fpic := -fPIC
 	SHARED := -dynamiclib
-	OSXVER = `sw_vers -productVersion | cut -d. -f 2`
+	OSXVER = 10.15 #`sw_vers -productVersion | cut -d. -f 2`
 	OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
 	ifeq ($(OSX_LT_MAVERICKS),"YES")
-		fpic += -mmacosx-version-min=10.2
+		fpic += -mmacosx-version-min=10.15
 	endif
    ifeq ($(arch),ppc)
 		PLATFORM_DEFINES += -DMSB_FIRST
@@ -610,7 +610,11 @@ CORE_DIR := .
 
 include Makefile.common
 
-OBJECTS := $(SOURCES_CXX:.cpp=.o)
+libRetroReversingConsole:=Famicom
+# use console or emulator name
+include ./libRetroReversing/Makefile.retroreversing
+
+OBJECTS := $(SOURCES_CXX:.cpp=.o) $(SOURCES_C:.c=.c.o)
 
 DEFINES := -D__LIBRETRO__ $(PLATFORM_DEFINES) -Wall
 
@@ -621,7 +625,7 @@ endif
 
 
 CFLAGS   += $(fpic) $(DEFINES)
-CXXFLAGS += $(fpic) $(DEFINES)
+CXXFLAGS += $(fpic) $(DEFINES) -mmacosx-version-min=10.15
 INCFLAGS += $(INCFLAGS_PLATFORM)
 
 OBJOUT   = -o
@@ -656,10 +660,10 @@ else
 endif
 	
 %.o: %.cpp
-	$(CXX) -c $(OBJOUT)$@ $< $(CXXFLAGS) $(INCFLAGS)
+	$(CXX) -mmacosx-version-min=10.15 -c $(OBJOUT)$@ $< $(CXXFLAGS) $(INCFLAGS)
 
-%.o: %.c
-	$(CXX) -c $(OBJOUT)$@ $< $(CXXFLAGS) $(INCFLAGS)
+ %.c.o: %.c
+	 $(CC) -mmacosx-version-min=10.15 -c $(OBJOUT)$@ $< $(CFLAGS) $(INCFLAGS)
 
 clean-objs:
 	rm -f $(OBJECTS)
