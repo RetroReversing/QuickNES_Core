@@ -261,7 +261,7 @@ ind##op: {                              \
 	goto ptr##op;                       \
 }                                       \
 case op + 0x08: /* abs */               \
-	libRR_log_instruction(pc-1, disasm "abs", 0x00, 2); \
+	libRR_log_instruction_1int(pc-1, disasm "%int%", 0x00, 3, GET_OPERAND16( pc )); \
 	ADD_PAGE                            \
 ptr##op:                                \
 	data = READ( data );                \
@@ -271,19 +271,19 @@ imm##op:                                \
 
 #define ARITH_ADDR_MODES_PTR(disasm, op )      \
 case op - 0x04: /* (ind,x) */           \
-	libRR_log_instruction(pc-1, disasm "(ind,x)", 0x00, 2); \
+	libRR_log_instruction_1int(pc-1, disasm "(ind,x)", 0x00, 2, data); \
 	IND_X                               \
 	goto imm##op;                       \
 case op + 0x0C:                         \
-		libRR_log_instruction(pc-1, disasm "(ind,y)", 0x00, 2); \
+		libRR_log_instruction_1int(pc-1, disasm "(%int%,y)", 0x00, 2, data); \
 	IND_Y(false,false)                  \
 	goto imm##op;                       \
 case op + 0x10: /* zp,X */              \
-	libRR_log_instruction(pc-1, disasm "%int%,X", 0x00, 2, data); \
+	libRR_log_instruction_1int(pc-1, disasm "%int%,X", 0x00, 2, data); \
 	data = uint8_t (data + x);          \
 	goto imm##op;                       \
 case op + 0x14: /* abs,Y */             \
-	libRR_log_instruction(pc-1, disasm "abs,Y", 0x00, 2); \
+	libRR_log_instruction_1int(pc-1, disasm "%int%,Y", 0x00, 3, GET_OPERAND16( pc )); \
 	data += y;                          \
 	goto ind##op;                       \
 case op + 0x18: /* abs,X */             \
@@ -517,7 +517,7 @@ imm##op:                                \
 	}
 	
 	case 0xB1:{// LDA (ind),Y
-		libRR_log_instruction(pc-1, "LDA (ind),Y", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "LDA (%int%),Y", 0x00, 2, data);
 		unsigned msb = READ_LOW( (uint8_t) (data + 1) );
 		data = READ_LOW( data ) + y;
 		// indexed common
@@ -576,22 +576,22 @@ imm##op:                                \
 	}
 	
 	case 0x96: {// STX zp,y
-		libRR_log_instruction(pc-1, "STX zp,y", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "STX %int%,y", 0x00, 2, data);
 		data = uint8_t (data + y);
 	}
 	case 0x86: {// STX zp
-		libRR_log_instruction(pc-1, "STX zp", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "STX %int%", 0x00, 2, data);
 		pc++;
 		WRITE_LOW( data, x );
 		goto loop;
 	}
 	
 	case 0xB6: {// LDX zp,y
-		libRR_log_instruction(pc-1, "LDX zp,y", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "LDX %int%,y", 0x00, 2, data);
 		data = uint8_t (data + y);
 	}
 	case 0xA6: // LDX zp
-		libRR_log_instruction(pc-1, "LDX zp", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "LDX %int%", 0x00, 2, data);
 		data = READ_LOW( data );
 	case 0xA2: // LDX #imm
 		libRR_log_instruction_1int(pc-1, "LDX #%int%", 0xA2, 2, data);
@@ -601,10 +601,10 @@ imm##op:                                \
 		goto loop;
 	
 	case 0xB4: // LDY zp,x
-		libRR_log_instruction(pc-1, "LDY zp,x", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "LDY %int%,x", 0xB4, 2, data);
 		data = uint8_t (data + x);
 	case 0xA4: // LDY zp
-		libRR_log_instruction(pc-1, "LDY zp", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "LDY %int%", 0xA4, 2, data);
 		data = READ_LOW( data );
 	case 0xA0: // LDY #imm
 		libRR_log_instruction_1int(pc-1, "LDY #%int%", 0xA0, 2, data);
@@ -614,12 +614,12 @@ imm##op:                                \
 		goto loop;
 	
 	case 0x91: // STA (ind),Y
-		libRR_log_instruction(pc-1, "STA (ind),Y", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "STA (%int%),Y", 0x00, 2, data);
 		IND_Y(false,false)
 		goto sta_ptr;
 	
 	case 0x81: // STA (ind,X)
-		libRR_log_instruction(pc-1, "STA (ind,X)", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "STA (%int%,X)", 0x00, 2, data);
 		IND_X
 		goto sta_ptr;
 	
@@ -658,12 +658,12 @@ imm##op:                                \
 	{
 		int temp;
 	case 0x8C: // STY abs
-		libRR_log_instruction_1int(pc-1, "STY %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "STY %int%", 0x8C, 3, GET_OPERAND16( pc ));
 		temp = y;
 		goto store_abs;
 	
 	case 0x8E: // STX abs
-		libRR_log_instruction_1int(pc-1, "STX %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "STX %int%", 0x8A, 3, GET_OPERAND16( pc ));
 		temp = x;
 	store_abs:
 		unsigned addr = GET_ADDR();
@@ -675,7 +675,7 @@ imm##op:                                \
 // Compare
 
 	case 0xEC:{// CPX abs
-		libRR_log_instruction_1int(pc-1, "CPX %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "CPX %int%", 0xEC, 3, GET_OPERAND16( pc ));
 		unsigned addr = GET_ADDR();
 		pc++;
 		data = READ( addr );
@@ -683,10 +683,10 @@ imm##op:                                \
 	}
 	
 	case 0xE4: // CPX zp
-		libRR_log_instruction_1int(pc-1, "CPX %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "CPX %int%", 0xE4, 2, data);
 		data = READ_LOW( data );
 	case 0xE0: // CPX #imm
-	libRR_log_instruction_1int(pc-1, "CPX #%int%", 0x00, 2,data);
+		libRR_log_instruction_1int(pc-1, "CPX #%int%", 0xE0, 2,data);
 	cpx_data:
 		nz = x - data;
 		pc++;
@@ -695,7 +695,7 @@ imm##op:                                \
 		goto loop;
 	
 	case 0xCC:{// CPY abs
-		libRR_log_instruction_1int(pc-1, "CPY %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "CPY %int%", 0xCC, 3, GET_OPERAND16( pc ));
 		unsigned addr = GET_ADDR();
 		pc++;
 		data = READ( addr );
@@ -703,10 +703,10 @@ imm##op:                                \
 	}
 	
 	case 0xC4: // CPY zp
-		libRR_log_instruction_1int(pc-1, "CPY %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "CPY %int%", 0xC4, 2, data);
 		data = READ_LOW( data );
 	case 0xC0: // CPY #imm
-		libRR_log_instruction_1int(pc-1, "CPY #%int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "CPY #%int%", 0xC0, 2, data);
 	cpy_data:
 		nz = y - data;
 		pc++;
@@ -717,26 +717,23 @@ imm##op:                                \
 // Logical
 
 	ARITH_ADDR_MODES("AND ", 0x25 ) // AND
-		// libRR_log_instruction(pc-1, "AND", 0x00, 2);
 		nz = (a &= data);
 		pc++;
 		goto loop;
 	
 	ARITH_ADDR_MODES("EOR ", 0x45 ) // EOR
-		// libRR_log_instruction(pc-1, "EOR", 0x00, 2);
 		nz = (a ^= data);
 		pc++;
 		goto loop;
 	
 	ARITH_ADDR_MODES("ORA ", 0x05 ) // ORA
-		// libRR_log_instruction_1int(pc-1, "ORA %int%", 0x00, 2, data);
 		nz = (a |= data);
 		pc++;
 		goto loop;
 	
 	case 0x2C:{// BIT abs
 		unsigned addr = GET_ADDR();
-		libRR_log_instruction_1int(pc-1, "BIT %int%", 0x00, 3, addr);
+		libRR_log_instruction_1int(pc-1, "BIT %int%", 0x2C, 3, addr);
 		pc += 2;
 		status &= ~st_v;
 		nz = READ_LIKELY_PPU( addr );
@@ -749,7 +746,7 @@ imm##op:                                \
 	}
 	
 	case 0x24: // BIT zp
-		libRR_log_instruction(pc-1, "BIT %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "BIT %int%", 0x24, 2, data);
 		nz = READ_LOW( data );
 		pc++;
 		status &= ~st_v;
@@ -782,11 +779,11 @@ imm##op:                                \
 // Shift/rotate
 
 	case 0x4A: // LSR A
-	libRR_log_instruction(pc-1, "LSR A", 0x00, 1);
+	libRR_log_instruction(pc-1, "LSR A", 0x4A, 1);
 	lsr_a:
 		c = 0;
 	case 0x6A: // ROR A
-		libRR_log_instruction(pc-1, "ROR A", 0x00, 1);
+		libRR_log_instruction(pc-1, "ROR A", 0x6A, 1);
 		nz = (c >> 1) & 0x80; // could use bit insert macro here
 		c = a << 8;
 		nz |= a >> 1;
@@ -794,14 +791,14 @@ imm##op:                                \
 		goto loop;
 
 	case 0x0A: // ASL A
-		libRR_log_instruction(pc-1, "ASL A", 0x00, 1);
+		libRR_log_instruction(pc-1, "ASL A", 0x0A, 1);
 		nz = a << 1;
 		c = nz;
 		a = (uint8_t) nz;
 		goto loop;
 
 	case 0x2A: { // ROL A
-		libRR_log_instruction(pc-1, "ROL A", 0x00, 1);
+		libRR_log_instruction(pc-1, "ROL A", 0x2A, 1);
 		nz = a << 1;
 		int temp = (c >> 8) & 1;
 		c = nz;
@@ -811,18 +808,18 @@ imm##op:                                \
 	}
 	
 	case 0x3E: // ROL abs,X
-		libRR_log_instruction_1int(pc-1, "ROL %int%,X", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "ROL %int%,X", 0x3E, 3, GET_OPERAND16( pc ));
 		data += x;
 		goto rol_abs;
 	
 	case 0x1E: // ASL abs,X
-		libRR_log_instruction_1int(pc-1, "ASL %int%,X", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "ASL %int%,X", 0x1E, 3, GET_OPERAND16( pc ));
 		data += x;
 	case 0x0E: // ASL abs
-		libRR_log_instruction_1int(pc-1, "ASL %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "ASL %int%", 0x0E, 3, GET_OPERAND16( pc ));
 		c = 0;
 	case 0x2E: // ROL abs
-		libRR_log_instruction_1int(pc-1, "ROL %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "ROL %int%", 0x2E, 3, GET_OPERAND16( pc ));
 	rol_abs: {
 		int temp = data;
 		ADD_PAGE
@@ -837,18 +834,18 @@ imm##op:                                \
 		goto loop;
 
 	case 0x7E: // ROR abs,X
-		libRR_log_instruction_1int(pc-1, "ROR %int%,X", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "ROR %int%,X", 0x7E, 3, GET_OPERAND16( pc ));
 		data += x;
 		goto ror_abs;
 	
 	case 0x5E: // LSR abs,X
-		libRR_log_instruction_1int(pc-1, "LSR %int%,X", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "LSR %int%,X", 0x5E, 3, GET_OPERAND16( pc ));
 		data += x;
 	case 0x4E: // LSR abs
-		libRR_log_instruction_1int(pc-1, "LSR %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "LSR %int%", 0x4E, 3, GET_OPERAND16( pc ));
 		c = 0;
 	case 0x6E: // ROR abs
-		libRR_log_instruction_1int(pc-1, "ROR %int%", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "ROR %int%", 0x6E, 3, GET_OPERAND16( pc ));
 	ror_abs: {
 		int temp = data;
 		ADD_PAGE
@@ -860,18 +857,18 @@ imm##op:                                \
 	}
 	
 	case 0x76: // ROR zp,x
-		libRR_log_instruction_1int(pc-1, "ROR %int%,x", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "ROR %int%,x", 0x76, 2, data);
 		data = uint8_t (data + x);
 		goto ror_zp;
 	
 	case 0x56: // LSR zp,x
-		libRR_log_instruction_1int(pc-1, "LSR %int%,x", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "LSR %int%,x", 0x56, 2, data);
 		data = uint8_t (data + x);
 	case 0x46: // LSR zp
-		libRR_log_instruction_1int(pc-1, "LSR %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "LSR %int%", 0x46, 2, data);
 		c = 0;
 	case 0x66: // ROR zp
-		libRR_log_instruction_1int(pc-1, "ROR %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "ROR %int%", 0x66, 2, data);
 	ror_zp: {
 		int temp = READ_LOW( data );
 		nz = ((c >> 1) & 0x80) | (temp >> 1);
@@ -880,18 +877,18 @@ imm##op:                                \
 	}
 	
 	case 0x36: // ROL zp,x
-		libRR_log_instruction_1int(pc-1, "ROL %int%,x", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "ROL %int%,x", 0x36, 2, data);
 		data = uint8_t (data + x);
 		goto rol_zp;
 	
 	case 0x16: // ASL zp,x
-		libRR_log_instruction_1int(pc-1, "ASL %int%,x", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "ASL %int%,x", 0x16, 2, data);
 		data = uint8_t (data + x);
 	case 0x06: // ASL zp
-		libRR_log_instruction_1int(pc-1, "ASL %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "ASL %int%", 0x06, 2, data);
 		c = 0;
 	case 0x26: // ROL zp
-		libRR_log_instruction_1int(pc-1, "ROL %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "ROL %int%", 0x26, 2, data);
 	rol_zp:
 		nz = (c >> 8) & 1;
 		nz |= (c = READ_LOW( data ) << 1);
@@ -900,32 +897,32 @@ imm##op:                                \
 // Increment/decrement
 
 	case 0xCA: {
-		libRR_log_instruction(pc-1, "DEX", 0x00, 1);
+		libRR_log_instruction(pc-1, "DEX", 0xCA, 1);
 		INC_DEC_XY( x, -1 ) 
 	}// DEX
 	
 	case 0x88: {
-		libRR_log_instruction(pc-1, "DEY", 0x00, 1);
+		libRR_log_instruction(pc-1, "DEY", 0x88, 1);
 		INC_DEC_XY( y, -1 )
 	} // DEY
 	
 	case 0xF6: // INC zp,x
-		libRR_log_instruction_1int(pc-1, "INC %int%,x", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "INC %int%,x", 0xF6, 2, data);
 		data = uint8_t (data + x);
 		nz = 1;
 		goto add_nz_zp;
 	case 0xE6: // INC zp
-		libRR_log_instruction_1int(pc-1, "INC %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "INC %int%", 0xE6, 2, data);
 		nz = 1;
 		goto add_nz_zp;
 	
 	case 0xD6: // DEC zp,x
-		libRR_log_instruction_1int(pc-1, "DEC %int%,x", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "DEC %int%,x", 0xD6, 2, data);
 		data = uint8_t (data + x);
 		nz = -1;
 		goto add_nz_zp;
 	case 0xC6: // DEC zp
-		libRR_log_instruction_1int(pc-1, "DEC %int%", 0x00, 2, data);
+		libRR_log_instruction_1int(pc-1, "DEC %int%", 0xC6, 2, data);
 		nz = -1;
 	add_nz_zp:
 		nz += READ_LOW( data );
@@ -935,7 +932,7 @@ imm##op:                                \
 		goto loop;
 	
 	case 0xFE: { // INC abs,x
-		libRR_log_instruction_1int(pc-1, "INC %int%,x", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "INC %int%,x", 0xFE, 3, GET_OPERAND16( pc ));
 		int temp = data + x;
 		data = x + GET_ADDR();
 		READ( data - ( temp & 0x100 ) );
@@ -944,13 +941,13 @@ imm##op:                                \
 	
 	case 0xEE: // INC abs
 		data = GET_ADDR();
-		libRR_log_instruction_1int(pc-1, "INC %int%", 0x00, 3, data);
+		libRR_log_instruction_1int(pc-1, "INC %int%", 0xEE, 3, data);
 	inc_ptr:
 		nz = 1;
 		goto inc_common;
 	
 	case 0xDE: { // DEC abs,x
-		libRR_log_instruction_1int(pc-1, "DEC %int%,x", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "DEC %int%,x", 0xDE, 3, GET_OPERAND16( pc ));
 		int temp = data + x;
 		data = x + GET_ADDR();
 		READ( data - ( temp & 0x100 ) );
@@ -958,7 +955,7 @@ imm##op:                                \
 	}
 	
 	case 0xCE: // DEC abs
-		libRR_log_instruction_1int(pc-1, "DEC %int%", 0x00, 3, data);
+		libRR_log_instruction_1int(pc-1, "DEC %int%", 0xCE, 3, data);
 		data = GET_ADDR();
 	dec_ptr:
 		nz = -1;
@@ -974,39 +971,39 @@ imm##op:                                \
 // Transfer
 
 	case 0xAA: // TAX
-		libRR_log_instruction(pc-1, "TAX", 0x00, 1);
+		libRR_log_instruction(pc-1, "TAX", 0xAA, 1);
 		x = a;
 	case 0x8A: // TXA
-		libRR_log_instruction(pc-1, "TXA", 0x00, 1);
+		libRR_log_instruction(pc-1, "TXA", 0x8A, 1);
 		a = nz = x;
 		goto loop;
 
 	case 0x9A: // TXS
-		libRR_log_instruction(pc-1, "TXS", 0x00, 1);
+		libRR_log_instruction(pc-1, "TXS", 0x9A, 1);
 		SET_SP( x ); // verified (no flag change)
 		goto loop;
 	
 	case 0xBA: // TSX
-		libRR_log_instruction(pc-1, "TSX", 0x00, 1);
+		libRR_log_instruction(pc-1, "TSX", 0xBA, 1);
 		x = nz = GET_SP();
 		goto loop;
 	
 // Stack
 	
 	case 0x48: // PHA
-		libRR_log_instruction(pc-1, "PHA", 0x00, 1);
+		libRR_log_instruction(pc-1, "PHA", 0x48, 1);
 		PUSH( a ); // verified
 		goto loop;
 		
 	case 0x68: // PLA
-		libRR_log_instruction(pc-1, "PLA", 0x00, 1);
+		libRR_log_instruction(pc-1, "PLA", 0x68, 1);
 		a = nz = READ_LOW( sp );
 		sp = (sp - 0xFF) | 0x100;
 		goto loop;
 		
 	case 0x40: // RTI
 		{
-			libRR_log_instruction(pc-1, "RTI", 0x00, 2);
+			libRR_log_instruction(pc-1, "RTI", 0x40, 1);
 			int temp = READ_LOW( sp );
 			pc   = READ_LOW( 0x100 | (sp - 0xFF) );
 			pc  |= READ_LOW( 0x100 | (sp - 0xFE) ) * 0x100;
@@ -1029,7 +1026,7 @@ imm##op:                                \
 		goto loop;
 	
 	case 0x28:{// PLP
-		libRR_log_instruction(pc-1, "PLP", 0x00, 1);
+		libRR_log_instruction(pc-1, "PLP", 0x28, 1);
 		int temp = READ_LOW( sp );
 		sp = (sp - 0xFF) | 0x100;
 		data = status;
@@ -1042,7 +1039,7 @@ imm##op:                                \
 	}
 	
 	case 0x08: { // PHP
-		libRR_log_instruction(pc-1, "PHP", 0x00, 1);
+		libRR_log_instruction(pc-1, "PHP", 0x08, 1);
 		int temp;
 		CALC_STATUS( temp );
 		PUSH( temp | st_b | st_r );
@@ -1076,32 +1073,32 @@ imm##op:                                \
 // Flags
 
 	case 0x38: // SEC
-		libRR_log_instruction(pc-1, "SEC", 0x00, 1);
+		libRR_log_instruction(pc-1, "SEC", 0x38, 1);
 		c = ~0;
 		goto loop;
 	
 	case 0x18: // CLC
-		libRR_log_instruction(pc-1, "CLC", 0x00, 1);
+		libRR_log_instruction(pc-1, "CLC", 0x18, 1);
 		c = 0;
 		goto loop;
 		
 	case 0xB8: // CLV
-		libRR_log_instruction(pc-1, "CLV", 0x00, 1);
+		libRR_log_instruction(pc-1, "CLV", 0xB8, 1);
 		status &= ~st_v;
 		goto loop;
 	
 	case 0xD8: // CLD
-		libRR_log_instruction(pc-1, "CLD", 0x00, 1);
+		libRR_log_instruction(pc-1, "CLD", 0xD8, 1);
 		status &= ~st_d;
 		goto loop;
 	
 	case 0xF8: // SED
-		libRR_log_instruction(pc-1, "SED", 0x00, 1);
+		libRR_log_instruction(pc-1, "SED", 0xF8, 1);
 		status |= st_d;
 		goto loop;
 	
 	case 0x58: // CLI
-		libRR_log_instruction(pc-1, "CLI", 0x00, 1);
+		libRR_log_instruction(pc-1, "CLI", 0x58, 1);
 		if ( !(status & st_i) )
 			goto loop;
 		status &= ~st_i;
@@ -1122,7 +1119,7 @@ imm##op:                                \
 		goto end;
 		
 	case 0x78: // SEI
-		libRR_log_instruction(pc-1, "SEI", 0x00, 1);
+		libRR_log_instruction(pc-1, "SEI", 0x78, 1);
 		if ( status & st_i )
 			goto loop;
 		status |= st_i;
@@ -1137,7 +1134,7 @@ imm##op:                                \
 
 // Unofficial
 	case 0x1C: case 0x3C: case 0x5C: case 0x7C: case 0xDC: case 0xFC: { // SKW
-		libRR_log_instruction(pc-1, "SKW", 0x00, 1);
+		libRR_log_instruction(pc-1, "SKW", 0x1C, 1);
 		data += x;
 		HANDLE_PAGE_CROSSING( data );
 		int addr = GET_ADDR() + x;
@@ -1154,7 +1151,6 @@ imm##op:                                \
 		goto loop;
 
 	ARITH_ADDR_MODES_PTR("DCP ", 0xC7 ) // DCP
-		// libRR_log_instruction(pc-1, "DCP", 0x00, 1);
 		WRITE( data, nz = READ( data ) );
 		nz = uint8_t( nz - 1 );
 		WRITE( data, nz );
@@ -1165,7 +1161,6 @@ imm##op:                                \
 		goto loop;
 
 	ARITH_ADDR_MODES_PTR("ISC ", 0xE7 ) // ISC
-		// libRR_log_instruction(pc-1, "ISC", 0x00, 1);
 		WRITE( data, nz = READ( data ) );
 		nz = uint8_t( nz + 1 );
 		WRITE( data, nz );
@@ -1173,7 +1168,6 @@ imm##op:                                \
 		goto adc_imm;
 
 	ARITH_ADDR_MODES_PTR("RLA ", 0x27 ) { // RLA
-		// libRR_log_instruction(pc-1, "RLA", 0x00, 1);
 		WRITE( data, nz = READ( data ) );
 		int temp = c;
 		c = nz << 1;
@@ -1185,7 +1179,6 @@ imm##op:                                \
 	}
 
 	ARITH_ADDR_MODES_PTR("RRA ", 0x67 ) { // RRA
-		// libRR_log_instruction(pc-1, "RRA", 0x00, 1);
 		int temp;
 		WRITE( data, temp = READ( data ) );
 		nz = ((c >> 1) & 0x80) | (temp >> 1);
@@ -1196,7 +1189,6 @@ imm##op:                                \
 	}
 
 	ARITH_ADDR_MODES_PTR("SLO ", 0x07 ) // SLO
-		// libRR_log_instruction(pc-1, "SLO", 0x00, 1);
 		WRITE( data, nz = READ( data ) );
 		c = nz << 1;
 		nz = uint8_t( c );
@@ -1206,7 +1198,6 @@ imm##op:                                \
 		goto loop;
 
 	ARITH_ADDR_MODES_PTR("SRE ", 0x47 ) // SRE
-		// libRR_log_instruction(pc-1, "SRE", 0x00, 1);
 		WRITE( data, nz = READ( data ) );
 		c = nz << 8;
 		nz >>= 1;
@@ -1216,21 +1207,22 @@ imm##op:                                \
 		goto loop;
 
 	case 0x4B: // ALR
-		libRR_log_instruction(pc-1, "ALR", 0x00, 1);
+		libRR_log_instruction(pc-1, "ALR", 0x4B, 1);
 		nz = (a &= data);
 		pc++;
 		goto lsr_a;
 
 	case 0x0B: // ANC
+		libRR_log_instruction(pc-1, "ANC", 0x0B, 1);
 	case 0x2B:
-		libRR_log_instruction(pc-1, "ANC", 0x00, 1);
+		libRR_log_instruction(pc-1, "ANC", 0x2B, 1);
 		nz = a &= data;
 		c = a << 1;
 		pc++;
 		goto loop;
 
 	case 0x6B: // ARR
-		libRR_log_instruction(pc-1, "ARR", 0x00, 1);
+		libRR_log_instruction(pc-1, "ARR", 0x6B, 1);
 		nz = a = uint8_t( ( ( data & a ) >> 1 ) | ( ( c >> 1 ) & 0x80 ) );
 		c = a << 2;
 		status = ( status & ~st_v ) | ( ( a ^ a << 1 ) & st_v );
@@ -1238,7 +1230,7 @@ imm##op:                                \
 		goto loop;
 
 	case 0xAB: // LXA
-		libRR_log_instruction(pc-1, "LXA", 0x00, 1);
+		libRR_log_instruction(pc-1, "LXA", 0xAB, 1);
 		a = data;
 		x = data;
 		nz = data;
@@ -1246,12 +1238,12 @@ imm##op:                                \
 		goto loop;
 
 	case 0xA3: // LAX
-		libRR_log_instruction(pc-1, "LAX", 0x00, 1);
+		libRR_log_instruction(pc-1, "LAX", 0xA3, 1);
 		IND_X
 		goto lax_ptr;
 
 	case 0xB3:
-		libRR_log_instruction(pc-1, "LAY", 0x00, 1);
+		libRR_log_instruction(pc-1, "LAY", 0xB3, 1);
 		IND_Y(true,true)
 		goto lax_ptr;
 
@@ -1283,7 +1275,7 @@ imm##op:                                \
 		goto loop;
 
 	case 0x83: // SAX
-		libRR_log_instruction(pc-1, "SAX", 0x00, 1);
+		libRR_log_instruction(pc-1, "SAX", 0x83, 1);
 		IND_X
 		goto sax_imm;
 
@@ -1303,7 +1295,7 @@ imm##op:                                \
 		goto loop;
 
 	case 0xCB: // SBX
-		libRR_log_instruction(pc-1, "SBX", 0x00, 1);
+		libRR_log_instruction(pc-1, "SBX", 0xCB, 1);
 		data = ( a & x ) - data;
 		c = ( data <= 0xFF ) ? 0x100 : 0;
 		nz = x = uint8_t( data );
@@ -1311,14 +1303,14 @@ imm##op:                                \
 		goto loop;
 
 	case 0x93: // SHA (ind),Y
-		libRR_log_instruction(pc-1, "SHA (ind),Y", 0x00, 1);
+		libRR_log_instruction_1int(pc-1, "SHA (%int%),Y", 0x93, 1, data);
 		IND_Y(false,false)
 		pc++;
 		WRITE( data, uint8_t( a & x & ( ( data >> 8 ) + 1 ) ) );
 		goto loop;
 
 	case 0x9F: { // SHA abs,Y
-		libRR_log_instruction(pc-1, "SHA abs,Y", 0x00, 1);
+		libRR_log_instruction(pc-1, "SHA abs,Y", 0x9F, 1);
 		data += y;
 		int temp = data;
 		ADD_PAGE
@@ -1329,7 +1321,7 @@ imm##op:                                \
 	}
 
 	case 0x9E: { // SHX abs,Y
-		libRR_log_instruction(pc-1, "SHX abs,Y", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "SHX %int%,Y", 0x9E, 3, GET_OPERAND16( pc ));
 		data += y;
 		int temp = data;
 		ADD_PAGE
@@ -1341,7 +1333,7 @@ imm##op:                                \
 	}
 
 	case 0x9C: { // SHY abs,X
-		libRR_log_instruction_1int(pc-1, "SHY %int%,X", 0x00, 3, GET_OPERAND16( pc ));
+		libRR_log_instruction_1int(pc-1, "SHY %int%,X", 0x9C, 3, GET_OPERAND16( pc ));
 		data += x;
 		int temp = data;
 		ADD_PAGE
@@ -1353,7 +1345,7 @@ imm##op:                                \
 	}
 
 	case 0x9B: { // SHS abs,Y
-		libRR_log_instruction(pc-1, "SHS abs,Y", 0x00, 2);
+		libRR_log_instruction_1int(pc-1, "SHS %int%,Y", 0x9B, 2, GET_OPERAND16( pc ));
 		data += y;
 		int temp = data;
 		ADD_PAGE
@@ -1365,7 +1357,7 @@ imm##op:                                \
 	}
 
 	case 0xBB: { // LAS abs,Y
-		libRR_log_instruction(pc-1, "LAS abs,Y", 0x00, 1);
+		libRR_log_instruction_1int(pc-1, "LAS %int%,Y", 0xBB, 3, GET_OPERAND16( pc ));
 		data += y;
 		HANDLE_PAGE_CROSSING( data );
 		int temp = data;
