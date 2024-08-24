@@ -7,6 +7,9 @@ git submodule update --init --recursive
 make
 ```
 
+![UI](https://github.com/user-attachments/assets/3cab894d-5821-41b4-a369-ade4a2c38069)
+
+
 # Possible Errors
 
 If you get the error:
