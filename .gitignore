@@ -4,3 +4,4 @@
 *.o
 *.d
 *.nes
+.DS_Store

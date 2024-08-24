@@ -7,6 +7,12 @@ git submodule update --init --recursive
 make
 ```
 
+# Running
+To run in MacOSX:
+```bash
+/Applications/RetroArch.app/Contents/MacOS/RetroArch -v -L quicknes_libretro.dylib yourgame.nes
+```
+
 # Possible Errors
 
 If you get the error:
