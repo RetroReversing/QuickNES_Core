@@ -1,11 +1,6 @@
 # RetroReversing Core for NES
 
-# Building
-To build:
-```
-git submodule update --init --recursive
-make
-```
+
 
 # Running
 To run in MacOSX:
@@ -13,7 +8,20 @@ To run in MacOSX:
 /Applications/RetroArch.app/Contents/MacOS/RetroArch -v -L quicknes_libretro.dylib yourgame.nes
 ```
 
-# Possible Errors
+The following should automatically popup in your browser:
+![UI](https://github.com/user-attachments/assets/3cab894d-5821-41b4-a369-ade4a2c38069)
+
+Click Run to continue.
+
+---
+# Building
+To build:
+```
+git submodule update --init --recursive
+make
+```
+
+## Possible Build Errors
 
 If you get the error:
 ```
