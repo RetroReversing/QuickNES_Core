@@ -11,7 +11,12 @@ To run in MacOSX:
 The following should automatically popup in your browser:
 ![UI](https://github.com/user-attachments/assets/3cab894d-5821-41b4-a369-ade4a2c38069)
 
-Click Run to continue.
+Click Run/Resume to run  the game.
+
+After pausing it will save data to:
+~/Documents/RetroArch/system/RE_projects/NES/
+
+Unless you have a different RetroArch system directory.
 
 ---
 # Building
